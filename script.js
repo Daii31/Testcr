@@ -76,35 +76,163 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-// Favorites
-function loadFavorites() {
+// Favorites with folders and search
+function getFavoriteFolders() {
     const user = getLoggedInUser();
-    const favorites = JSON.parse(localStorage.getItem('favorites_' + user) || '[]');
-    const list = document.getElementById('favorite-list');
-    if (!list) return;
-    list.innerHTML = '';
-    favorites.forEach(fav => {
-        const item = document.createElement('div');
-        item.textContent = fav;
-        item.className = 'favorite-item';
-        item.onclick = () => loadPriceHistoryModule(fav);
-        list.appendChild(item);
+    return JSON.parse(localStorage.getItem('favorite_folders_' + user) || '[]');
+}
+
+function saveFavoriteFolders(folders) {
+    const user = getLoggedInUser();
+    localStorage.setItem('favorite_folders_' + user, JSON.stringify(folders));
+}
+
+function addFolder() {
+    const input = document.getElementById('folder-name-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const folders = getFavoriteFolders();
+    folders.push({ name, coins: [] });
+    saveFavoriteFolders(folders);
+    input.value = '';
+    loadFavorites();
+}
+
+function moveFavorite(coinId, fromIndex, toIndex) {
+    const folders = getFavoriteFolders();
+    if (!folders[fromIndex] || !folders[toIndex]) return;
+    const idx = folders[fromIndex].coins.indexOf(coinId);
+    if (idx !== -1) {
+        folders[fromIndex].coins.splice(idx, 1);
+        if (!folders[toIndex].coins.includes(coinId)) {
+            folders[toIndex].coins.push(coinId);
+        }
+        saveFavoriteFolders(folders);
+        loadFavorites();
+    }
+}
+
+function addFavoriteFromSearch(id) {
+    let folders = getFavoriteFolders();
+    if (folders.length === 0) {
+        folders.push({ name: 'Default', coins: [] });
+    }
+    if (!folders[0].coins.includes(id)) {
+        folders[0].coins.push(id);
+        saveFavoriteFolders(folders);
+        loadFavorites();
+    }
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('favorite-search-input').value = '';
+}
+
+function loadFavorites() {
+    const container = document.getElementById('favorite-folders');
+    if (!container) return;
+    const folders = getFavoriteFolders();
+    container.innerHTML = '';
+
+    folders.forEach((folder, fIndex) => {
+        const folderDiv = document.createElement('div');
+        folderDiv.className = 'folder';
+        const title = document.createElement('div');
+        title.className = 'folder-title';
+        title.textContent = folder.name;
+        folderDiv.appendChild(title);
+
+        const chainMap = {};
+        folder.coins.forEach(id => {
+            chainMap[id] = null; // placeholder
+        });
+
+        Promise.all(folder.coins.map(id => fetch(`https://api.coingecko.com/api/v3/coins/${id}`)
+            .then(r => r.json())
+            .then(data => ({ id, data }))
+            .catch(() => null)))
+            .then(results => {
+                results.forEach(res => {
+                    if (!res) return;
+                    const chain = Object.keys(res.data.platforms)[0] || 'Unknown';
+                    if (!chainMap[chain]) chainMap[chain] = [];
+                    chainMap[chain].push(res);
+                });
+
+                Object.keys(chainMap).forEach(chain => {
+                    const chainTitle = document.createElement('div');
+                    chainTitle.textContent = chain;
+                    chainTitle.className = 'chain-title';
+                    folderDiv.appendChild(chainTitle);
+
+                    chainMap[chain].forEach(res => {
+                        const item = document.createElement('div');
+                        item.className = 'favorite-item';
+                        const img = document.createElement('img');
+                        img.src = res.data.image.thumb;
+                        item.appendChild(img);
+
+                        const span = document.createElement('span');
+                        const price = res.data.market_data.current_price.usd;
+                        span.textContent = `${res.data.name} - $${price}`;
+                        item.appendChild(span);
+
+                        item.onclick = () => loadPriceHistoryModule(res.id);
+
+                        const select = document.createElement('select');
+                        folders.forEach((f, idx) => {
+                            const opt = document.createElement('option');
+                            opt.value = idx;
+                            opt.textContent = f.name;
+                            if (idx === fIndex) opt.selected = true;
+                            select.appendChild(opt);
+                        });
+                        select.onchange = () => moveFavorite(res.id, fIndex, parseInt(select.value));
+                        item.appendChild(select);
+
+                        folderDiv.appendChild(item);
+                    });
+                });
+            });
+
+        container.appendChild(folderDiv);
     });
 }
 
-function addFavorite() {
-    const input = document.getElementById('add-favorite-input');
-    const coin = input.value.trim();
-    if (!coin) return;
-    const user = getLoggedInUser();
-    const key = 'favorites_' + user;
-    const favorites = JSON.parse(localStorage.getItem(key) || '[]');
-    if (!favorites.includes(coin)) {
-        favorites.push(coin);
-        localStorage.setItem(key, JSON.stringify(favorites));
-        loadFavorites();
+function searchCoins(query) {
+    const resultsDiv = document.getElementById('search-results');
+    if (!query) {
+        resultsDiv.innerHTML = '';
+        return;
     }
-    input.value = '';
+    fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`)
+        .then(resp => resp.json())
+        .then(data => {
+            const ids = data.coins.map(c => c.id);
+            if (ids.length === 0) {
+                resultsDiv.innerHTML = 'No results';
+                return;
+            }
+            fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`)
+                .then(r => r.json())
+                .then(priceData => {
+                    resultsDiv.innerHTML = '';
+                    data.coins.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        const img = document.createElement('img');
+                        img.src = c.thumb;
+                        div.appendChild(img);
+                        const span = document.createElement('span');
+                        const price = priceData[c.id] ? priceData[c.id].usd : 'N/A';
+                        span.textContent = `${c.name} - $${price}`;
+                        div.appendChild(span);
+                        div.onclick = () => addFavoriteFromSearch(c.id);
+                        resultsDiv.appendChild(div);
+                    });
+                });
+        })
+        .catch(() => {
+            resultsDiv.innerHTML = 'Search failed';
+        });
 }
 
 // Modules
@@ -181,6 +309,10 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         requireAuth();
         document.getElementById('current-user').textContent = getLoggedInUser();
+        const searchInput = document.getElementById('favorite-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', e => searchCoins(e.target.value));
+        }
         loadFavorites();
     }
 });
