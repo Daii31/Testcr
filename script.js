@@ -184,9 +184,6 @@ function loadWatchList() {
         folderDiv.appendChild(title);
 
         const chainMap = {};
-        folder.coins.forEach(id => {
-            chainMap[id] = null; // placeholder
-        });
 
         Promise.all(folder.coins.map(id => fetch(`https://api.coingecko.com/api/v3/coins/${id}`)
             .then(r => r.json())
