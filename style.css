@@ -57,3 +57,17 @@ header {
 .module-controls button {
     margin-right: 10px;
 }
+
+#register-form {
+    display: none;
+}
+
+.toggle-link {
+    color: #007bff;
+    cursor: pointer;
+}
+
+.toggle-text {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
