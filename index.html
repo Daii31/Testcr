@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Crypto Tracker</h1>
+        <div id="user-info">
+            <span id="current-user"></span>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="favorites">
+            <h2>Favorites</h2>
+            <div id="favorite-list"></div>
+            <input type="text" id="add-favorite-input" placeholder="Add crypto id (e.g. bitcoin)">
+            <button onclick="addFavorite()">Add</button>
+        </aside>
+
+        <main class="modules">
+            <h2>Modules</h2>
+            <div class="module-controls">
+                <button onclick="loadPriceHistoryModule()">Price History</button>
+                <button onclick="loadNewsModule()">News</button>
+            </div>
+            <div id="module-container"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
