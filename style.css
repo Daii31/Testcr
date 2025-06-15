@@ -71,3 +71,60 @@ header {
     margin-top: 10px;
     font-size: 0.9em;
 }
+
+/* Favorites */
+#favorite-search-input {
+    width: 90%;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+#search-results {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.search-result-item img {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+}
+
+.folder {
+    margin-bottom: 10px;
+}
+
+.folder-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.favorite-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.favorite-item img {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+}
+
+.favorite-item select {
+    margin-left: auto;
+}
+
+.chain-title {
+    font-style: italic;
+    margin: 4px 0;
+}

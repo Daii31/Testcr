@@ -18,9 +18,11 @@
     <div class="container">
         <aside class="favorites">
             <h2>Favorites</h2>
-            <div id="favorite-list"></div>
-            <input type="text" id="add-favorite-input" placeholder="Add crypto id (e.g. bitcoin)">
-            <button onclick="addFavorite()">Add</button>
+            <input type="text" id="favorite-search-input" placeholder="Search tokens...">
+            <div id="search-results"></div>
+            <div id="favorite-folders"></div>
+            <input type="text" id="folder-name-input" placeholder="New folder name">
+            <button onclick="addFolder()">Add Folder</button>
         </aside>
 
         <main class="modules">
