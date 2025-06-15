@@ -20,6 +20,14 @@ function requireAuth() {
         window.location.href = 'login.html';
     }
 }
+let watchEditMode = false;
+function toggleWatchEdit() {
+    watchEditMode = !watchEditMode;
+    const btn = document.getElementById("edit-watch-btn");
+    if (btn) btn.textContent = watchEditMode ? "Done" : "Edit";
+    loadWatchList();
+}
+
 
 // Authentication
 function login() {
@@ -215,7 +223,8 @@ function loadWatchList() {
 
                         item.onclick = () => loadPriceHistoryModule(res.id);
 
-                        const select = document.createElement('select');
+                        if (watchEditMode) {
+                            const select = document.createElement('select');
                         folders.forEach((f, idx) => {
                             const opt = document.createElement('option');
                             opt.value = idx;
@@ -235,6 +244,7 @@ function loadWatchList() {
                         removeBtn.textContent = 'Remove';
                         removeBtn.onclick = e => { e.stopPropagation(); removeWatchItem(res.id, fIndex); };
                         item.appendChild(removeBtn);
+                        }
 
                         folderDiv.appendChild(item);
                     });

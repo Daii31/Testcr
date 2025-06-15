@@ -73,6 +73,10 @@ header {
 }
 
 /* Watch List */
+#edit-watch-btn {
+    margin-bottom: 5px;
+}
+
 #watch-search-input {
     width: 90%;
     padding: 5px;
