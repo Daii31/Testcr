@@ -1,0 +1,13 @@
+{
+  "name": "testcr",
+  "version": "1.0.0",
+  "description": "This project is a simple client-side crypto tracking website built only with HTML, CSS and JavaScript. It allows users to register, login and manage a list of favourite cryptocurrencies. The main interface provides modules for viewing price history and trending news using the CoinGecko API.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
