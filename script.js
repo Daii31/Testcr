@@ -199,20 +199,28 @@ function loadFavorites() {
 
 function searchCoins(query) {
     const resultsDiv = document.getElementById('search-results');
+    if (!resultsDiv) return;
     if (!query) {
         resultsDiv.innerHTML = '';
         return;
     }
+
     fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`)
-        .then(resp => resp.json())
+        .then(resp => {
+            if (!resp.ok) throw new Error('search api error');
+            return resp.json();
+        })
         .then(data => {
             const ids = data.coins.map(c => c.id);
             if (ids.length === 0) {
                 resultsDiv.innerHTML = 'No results';
                 return;
             }
-            fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`)
-                .then(r => r.json())
+            return fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`)
+                .then(r => {
+                    if (!r.ok) throw new Error('price api error');
+                    return r.json();
+                })
                 .then(priceData => {
                     resultsDiv.innerHTML = '';
                     data.coins.forEach(c => {
@@ -230,7 +238,8 @@ function searchCoins(query) {
                     });
                 });
         })
-        .catch(() => {
+        .catch(err => {
+            console.error(err);
             resultsDiv.innerHTML = 'Search failed';
         });
 }
@@ -299,20 +308,27 @@ function loadNewsModule() {
 }
 
 // Initialization
-window.addEventListener('DOMContentLoaded', () => {
-    if (document.body.classList.contains('login-page')) {
-        if (getLoggedInUser()) {
-            window.location.href = 'index.html';
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+        if (document.body.classList.contains('login-page')) {
+            if (getLoggedInUser()) {
+                window.location.href = 'index.html';
+            } else {
+                showLoginForm();
+            }
         } else {
-            showLoginForm();
+            requireAuth();
+            document.getElementById('current-user').textContent = getLoggedInUser();
+            const searchInput = document.getElementById('favorite-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', e => searchCoins(e.target.value));
+            }
+            loadFavorites();
         }
-    } else {
-        requireAuth();
-        document.getElementById('current-user').textContent = getLoggedInUser();
-        const searchInput = document.getElementById('favorite-search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', e => searchCoins(e.target.value));
-        }
-        loadFavorites();
-    }
-});
+    });
+}
+
+// Export functions for testing in Node
+if (typeof module !== 'undefined') {
+    module.exports = { searchCoins };
+}
