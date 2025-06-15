@@ -76,30 +76,30 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-// Favorites with folders and search
-function getFavoriteFolders() {
+// Watch list with folders and search
+function getWatchFolders() {
     const user = getLoggedInUser();
-    return JSON.parse(localStorage.getItem('favorite_folders_' + user) || '[]');
+    return JSON.parse(localStorage.getItem('watch_folders_' + user) || '[]');
 }
 
-function saveFavoriteFolders(folders) {
+function saveWatchFolders(folders) {
     const user = getLoggedInUser();
-    localStorage.setItem('favorite_folders_' + user, JSON.stringify(folders));
+    localStorage.setItem('watch_folders_' + user, JSON.stringify(folders));
 }
 
-function addFolder() {
+function addWatchFolder() {
     const input = document.getElementById('folder-name-input');
     const name = input.value.trim();
     if (!name) return;
-    const folders = getFavoriteFolders();
+    const folders = getWatchFolders();
     folders.push({ name, coins: [] });
-    saveFavoriteFolders(folders);
+    saveWatchFolders(folders);
     input.value = '';
-    loadFavorites();
+    loadWatchList();
 }
 
-function moveFavorite(coinId, fromIndex, toIndex) {
-    const folders = getFavoriteFolders();
+function moveWatchItem(coinId, fromIndex, toIndex) {
+    const folders = getWatchFolders();
     if (!folders[fromIndex] || !folders[toIndex]) return;
     const idx = folders[fromIndex].coins.indexOf(coinId);
     if (idx !== -1) {
@@ -107,29 +107,64 @@ function moveFavorite(coinId, fromIndex, toIndex) {
         if (!folders[toIndex].coins.includes(coinId)) {
             folders[toIndex].coins.push(coinId);
         }
-        saveFavoriteFolders(folders);
-        loadFavorites();
+        saveWatchFolders(folders);
+        loadWatchList();
     }
 }
 
-function addFavoriteFromSearch(id) {
-    let folders = getFavoriteFolders();
+function addWatchFromSearch(id) {
+    let folders = getWatchFolders();
     if (folders.length === 0) {
         folders.push({ name: 'Default', coins: [] });
     }
     if (!folders[0].coins.includes(id)) {
         folders[0].coins.push(id);
-        saveFavoriteFolders(folders);
-        loadFavorites();
+        saveWatchFolders(folders);
+        loadWatchList();
     }
     document.getElementById('search-results').innerHTML = '';
-    document.getElementById('favorite-search-input').value = '';
+    document.getElementById('watch-search-input').value = '';
 }
 
-function loadFavorites() {
-    const container = document.getElementById('favorite-folders');
+function getWatchAliases() {
+    const user = getLoggedInUser();
+    return JSON.parse(localStorage.getItem('watch_aliases_' + user) || '{}');
+}
+
+function saveWatchAliases(aliases) {
+    const user = getLoggedInUser();
+    localStorage.setItem('watch_aliases_' + user, JSON.stringify(aliases));
+}
+
+function renameWatchItem(coinId) {
+    const aliases = getWatchAliases();
+    const current = aliases[coinId] || '';
+    const name = prompt('Custom name', current);
+    if (name !== null) {
+        if (name.trim() === '') {
+            delete aliases[coinId];
+        } else {
+            aliases[coinId] = name.trim();
+        }
+        saveWatchAliases(aliases);
+        loadWatchList();
+    }
+}
+
+function removeWatchItem(coinId, folderIndex) {
+    const folders = getWatchFolders();
+    const idx = folders[folderIndex].coins.indexOf(coinId);
+    if (idx !== -1) {
+        folders[folderIndex].coins.splice(idx, 1);
+        saveWatchFolders(folders);
+        loadWatchList();
+    }
+}
+
+function loadWatchList() {
+    const container = document.getElementById('watch-folders');
     if (!container) return;
-    const folders = getFavoriteFolders();
+    const folders = getWatchFolders();
     container.innerHTML = '';
 
     folders.forEach((folder, fIndex) => {
@@ -165,14 +200,17 @@ function loadFavorites() {
 
                     chainMap[chain].forEach(res => {
                         const item = document.createElement('div');
-                        item.className = 'favorite-item';
+                        item.className = 'watch-item';
                         const img = document.createElement('img');
                         img.src = res.data.image.thumb;
                         item.appendChild(img);
 
                         const span = document.createElement('span');
                         const price = res.data.market_data.current_price.usd;
-                        span.textContent = `${res.data.name} - $${price}`;
+                        const aliases = getWatchAliases();
+                        const alias = aliases[res.id];
+                        const name = alias ? `${alias} (${res.data.name})` : res.data.name;
+                        span.textContent = `${name} - $${price}`;
                         item.appendChild(span);
 
                         item.onclick = () => loadPriceHistoryModule(res.id);
@@ -185,8 +223,18 @@ function loadFavorites() {
                             if (idx === fIndex) opt.selected = true;
                             select.appendChild(opt);
                         });
-                        select.onchange = () => moveFavorite(res.id, fIndex, parseInt(select.value));
+                        select.onchange = () => moveWatchItem(res.id, fIndex, parseInt(select.value));
                         item.appendChild(select);
+
+                        const renameBtn = document.createElement('button');
+                        renameBtn.textContent = 'Rename';
+                        renameBtn.onclick = e => { e.stopPropagation(); renameWatchItem(res.id); };
+                        item.appendChild(renameBtn);
+
+                        const removeBtn = document.createElement('button');
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.onclick = e => { e.stopPropagation(); removeWatchItem(res.id, fIndex); };
+                        item.appendChild(removeBtn);
 
                         folderDiv.appendChild(item);
                     });
@@ -233,7 +281,7 @@ function searchCoins(query) {
                         const price = priceData[c.id] ? priceData[c.id].usd : 'N/A';
                         span.textContent = `${c.name} - $${price}`;
                         div.appendChild(span);
-                        div.onclick = () => addFavoriteFromSearch(c.id);
+                        div.onclick = () => addWatchFromSearch(c.id);
                         resultsDiv.appendChild(div);
                     });
                 });
@@ -319,11 +367,11 @@ if (typeof window !== 'undefined') {
         } else {
             requireAuth();
             document.getElementById('current-user').textContent = getLoggedInUser();
-            const searchInput = document.getElementById('favorite-search-input');
+            const searchInput = document.getElementById('watch-search-input');
             if (searchInput) {
                 searchInput.addEventListener('input', e => searchCoins(e.target.value));
             }
-            loadFavorites();
+            loadWatchList();
         }
     });
 }
