@@ -53,6 +53,24 @@ function register() {
     }
 }
 
+function showRegisterForm() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    if (loginForm && registerForm) {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+    }
+}
+
+function showLoginForm() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    if (loginForm && registerForm) {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+    }
+}
+
 function logout() {
     localStorage.removeItem('loggedInUser');
     window.location.href = 'login.html';
@@ -157,6 +175,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.body.classList.contains('login-page')) {
         if (getLoggedInUser()) {
             window.location.href = 'index.html';
+        } else {
+            showLoginForm();
         }
     } else {
         requireAuth();
